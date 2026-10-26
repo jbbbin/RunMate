@@ -1,0 +1,9 @@
+.DS_Store
+xcuserdata/
+*.xcuserstate
+DerivedData/
+.build/
+build/
+GoogleService-Info.plist
+.firebase/
+firebase-debug.log*

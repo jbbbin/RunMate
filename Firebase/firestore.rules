@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsUser(userID) {
+      return signedIn() && request.auth.uid == userID;
+    }
+
+    // 초기 버전은 프로필과 기록을 본인에게만 공개합니다.
+    match /users/{userID} {
+      allow read, delete: if ownsUser(userID);
+      allow create, update: if ownsUser(userID)
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() > 0
+        && request.resource.data.nickname.size() <= 40
+        && request.resource.data.totalDistanceMeters is number
+        && request.resource.data.totalDistanceMeters >= 0
+        && request.resource.data.createdAt is timestamp;
+
+      match /runRecords/{recordID} {
+        allow read, delete: if ownsUser(userID);
+        allow create, update: if ownsUser(userID)
+          && request.resource.data.userID == userID
+          && request.resource.data.distanceMeters is number
+          && request.resource.data.distanceMeters > 0
+          && request.resource.data.durationSeconds is int
+          && request.resource.data.durationSeconds > 0
+          && request.resource.data.startedAt is timestamp
+          && request.resource.data.finishedAt is timestamp
+          && request.resource.data.finishedAt >= request.resource.data.startedAt;
+      }
+    }
+
+    // 여정 방은 현재 로컬 미리보기입니다. 서버 연결 시 정원/참가/핀 Rules를 추가합니다.
+  }
+}
